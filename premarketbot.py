@@ -6,6 +6,7 @@ from ibapi.client import *
 from ibapi.contract import *
 from ibapi.order import *
 from ibapi.contract import Contract
+from ibapi.order import Order
 from threading import Thread
 import queue
 import datetime
@@ -86,6 +87,7 @@ class TestApp(TestWrapper, TestClient):
 
         #Connects to the server with the ipaddress, portid, and clientId specified in the program execution area
         self.connect(ipaddress, portid, clientid)
+        self.nextorderId = None
 
         #Initializes the threading
         thread = Thread(target = self.run)
@@ -95,8 +97,10 @@ class TestApp(TestWrapper, TestClient):
         #Starts listening for errors 
         self.init_error()
 
+        
 
-def create_contract(symbol: str) -> Contract:
+
+def createContract(symbol: str) -> Contract:
     contract = Contract()
     contract.symbol = symbol
     contract.secType = "STK"
@@ -104,6 +108,14 @@ def create_contract(symbol: str) -> Contract:
     contract.exchange = "SMART"
     return contract
 
+def createOrder(action, quantity, stop, target, crash):
+    # Fills out the order object 
+    order1 = Order()    # Creates an order object from the import
+    order1.action = action   # Sets the order action to buy
+    order1.orderType = "MKT"    # Sets order type to market buy
+    order1.transmit = True
+    order1.totalQuantity = quantity   # Setting a static quantity of 10 
+    return order1   # Returns the order object 
 
 if __name__ == '__main__':
 
@@ -114,7 +126,7 @@ if __name__ == '__main__':
 
     contracts = []
     for s in args.symbol:
-        contract = create_contract(s)
+        contract = createContract(s)
         contracts.append(contract)
         print(contract.symbol)
 
@@ -137,3 +149,4 @@ if __name__ == '__main__':
     print("STARTED--> Now passing orders..." )
     # Optional disconnect. If keeping an open connection to the input don't disconnet
     # app.disconnect()
+

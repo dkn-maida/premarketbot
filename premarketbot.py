@@ -153,11 +153,11 @@ class Client(EClient):
 
 
     def getOpenBar(self, contract):
-        print("Asking the first 5 min candle")
+        print("Asking the first 10 min candle")
         bar_storage = self.wrapper.init_bar()
-        end_date=datetime.datetime(year=now.year, month=now.month, day=now.day-2, hour=15, minute=35)
+        end_date=datetime.datetime(year=now.year, month=now.month, day=now.day-2, hour=15, minute=40)
         end_date=end_date.strftime("%Y%m%d %H:%M:%S")
-        self.reqHistoricalData(self.request_id, contract, end_date, "300 S", "5 mins", "TRADES", 1, 1, False, [])
+        self.reqHistoricalData(self.request_id, contract, end_date, "300 S", "10 mins", "TRADES", 1, 1, False, [])
         self.request_id+=1
         max_wait_time = 10
         try:
@@ -173,8 +173,7 @@ class Client(EClient):
     def fireOrder(self, contract, order):
         print("firing an order")
         order_status_storage=self.wrapper.init_order_status()
-        self.placeOrder(self.request_id, contract, order)
-        self.request_id+=1
+        self.placeOrder(order.orderId, contract, order)
         max_wait_time=10
         try:
             order_status = order_status_storage.get(timeout = max_wait_time)
@@ -227,7 +226,7 @@ def createContract(symbol: str) -> Contract:
     contract.exchange = "SMART"
     return contract
 
-def createConditionalOrder(contract, action, quantity, stop, target, start) -> Order:
+def createConditionalOrder(contract, action, quantity, target, stop, start) -> Order:
 
     priceCondition = order_condition.Create(OrderCondition.Price)
     priceCondition.conId = contract.conId
@@ -236,13 +235,40 @@ def createConditionalOrder(contract, action, quantity, stop, target, start) -> O
     priceCondition.triggerMethod = PriceCondition.TriggerMethodEnum.Last
     priceCondition.price = start
 
-    order = Order() 
-    order.action = action  
-    order.orderType = "MKT"    
-    order.transmit = True
-    order.totalQuantity = quantity
-    order.conditions.append(priceCondition)
-    return order
+    orderMain = Order()
+    orderMain.orderId=app.request_id
+    app.request_id += 1
+    orderMain.action = action  
+    orderMain.orderType = "MKT"    
+    orderMain.transmit = False
+    orderMain.totalQuantity = quantity
+    orderMain.conditions.append(priceCondition)
+
+    takeProfit = Order()
+    takeProfit.orderId = app.request_id
+    app.request_id += 1
+    takeProfit.action = "SELL" if action == "BUY" else "BUY"
+    takeProfit.orderType = "LMT"
+    takeProfit.totalQuantity = quantity
+    takeProfit.lmtPrice = target
+    takeProfit.parentId = orderMain.orderId
+    takeProfit.transmit = False
+
+    stopLoss = Order()
+    stopLoss.orderId = app.request_id
+    app.request_id += 1
+    stopLoss.action = "SELL" if action == "BUY" else "BUY"
+    stopLoss.orderType = "STP"
+    #Stop trigger price
+    stopLoss.auxPrice = stop
+    stopLoss.totalQuantity = quantity
+    stopLoss.parentId = orderMain.orderId
+    #In this case, the low side order will be the last child being sent. Therefore, it needs to set this attribute to True 
+    #to activate all its predecessors
+    stopLoss.transmit = True
+
+    return [orderMain, takeProfit, stopLoss]
+
 
 if __name__ == '__main__':
 
@@ -283,8 +309,9 @@ if __name__ == '__main__':
         openTime=datetime.datetime(year=now.year, month=now.month, day=now.day, hour=10, minute=00)
         openTime=datetime.datetime.timestamp(openTime)
         #assigning the return from our clock method to a variable
-        print("requestion server time...")
+        print("requesting server time...")
         requested_time = app.server_clock()
+        print(requested_time)
         print("server time requested, waiting for market open...")
         while(requested_time < openTime):
             print("not yet")
@@ -304,22 +331,48 @@ if __name__ == '__main__':
 
             #bar infos
             bar = app.getOpenBar(contract)
+          
+            body= round(abs(bar.close - bar.open), 2)
+            range= round( (bar.high - bar.low), 2)
+            rangeUp= round((bar.high - max(bar.close, bar.open)), 2)
+            rangeDown= round((min(bar.close, bar.open) - bar.low), 2)
+
             print("High=", bar.high)
             print("Low=", bar.low)
             print("Open=", bar.open)
-            print("Body=", bar.high-bar.open)
+            print("Body=", body)
+            print("Range=", range)
+            print("RangeUp=", rangeUp)
+            print("RangeDown=", rangeDown)
 
+        
             #order infos
-            quantity= MAX_RISK // (bar.high-bar.open)
+            move=round(max(body, rangeUp),2)
+            quantity= MAX_RISK // move
+            target=round((bar.high + move), 2)
+            stop=round((bar.high - move), 2)
             print("Quantity is= ", quantity)
             print("Start is= ", bar.high)
-            order=createConditionalOrder(contract, "BUY", quantity, 0, 0, bar.high)
-            status=app.fireOrder(contract, order)
-            print(status)
-            order=createConditionalOrder(contract, "SELL", quantity, 0, 0, bar.low)
-            status=app.fireOrder(contract, order)
-            print(status)
-            #createConditionalOrder()
+            print("Direction is=", "LONG")
+            print("Target is=", target)
+            print("Stop is=", stop)
+            orders=createConditionalOrder(contract, "BUY", quantity, target, stop, bar.high)
+            for order in orders:
+                status=app.fireOrder(contract, order)
+                print(status)
+
+            move=round(max(body, rangeDown), 2)
+            target=round((bar.low - move), 2)
+            stop=round((bar.low + move), 2)
+            print("Quantity is= ", quantity)
+            print("Start is= ", bar.low)
+            print("Direction is=", "SHORT")
+            print("Target is=", target)
+            print("Stop is=", stop)
+            orders=createConditionalOrder(contract, "SELL", quantity, target, stop, bar.low)
+            for order in orders:
+                status=app.fireOrder(contract, order)
+                print(status)
 
     except Exception as err:
         print("Shit happens ", type(err).__name__)
@@ -342,3 +395,4 @@ if __name__ == '__main__':
     # Exception handling
     # logging
     # clarity
+    # Gerer les cancels

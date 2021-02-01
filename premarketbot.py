@@ -96,14 +96,14 @@ class Wrapper(EWrapper):
         self.my_bar_queue.put(bar)
 
     #order handling methods
-    def init_order_status(self):
-        order_status_queue = queue.Queue()
-        self.my_order_status_queue=order_status_queue
-        return order_status_queue
+    # def init_order_status(self):
+    #     order_status_queue = queue.Queue()
+    #     self.my_order_status_queue=order_status_queue
+    #     return order_status_queue
 
-    def orderStatus(self, orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
-        orderStatus = OrderStatus(orderId, status, filled, remaining, parentId, whyHeld)
-        self.my_order_status_queue.put(orderStatus)
+    # def orderStatus(self, orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice):
+    #     orderStatus = OrderStatus(orderId, status, filled, remaining, parentId, whyHeld)
+    #     self.my_order_status_queue.put(orderStatus)
 
 
 # Below is the TestClient/EClient Class 
@@ -170,20 +170,20 @@ class Client(EClient):
             print(self.get_error(timeout=5))
         return requested_bar
 
-    def fireOrder(self, contract, order):
-        print("firing an order")
-        order_status_storage=self.wrapper.init_order_status()
-        self.placeOrder(order.orderId, contract, order)
-        max_wait_time=10
-        try:
-            order_status = order_status_storage.get(timeout = max_wait_time)
-        except queue.Empty:
-            print("The queue was empty or max time reached")
-            order_status = None
-        while self.wrapper.is_error():
-            print("Error:")
-            print(self.get_error(timeout=5))
-        return order_status
+    # def fireOrder(self, contract, order):
+    #     print("firing an order")
+    #     order_status_storage=self.wrapper.init_order_status()
+    #     self.placeOrder(order.orderId, contract, order)
+    #     # max_wait_time=10
+    #     # try:
+    #     #     order_status = order_status_storage.get(timeout = max_wait_time)
+    #     # except queue.Empty:
+    #     #     print("The queue was empty or max time reached")
+    #     #     order_status = None
+    #     # while self.wrapper.is_error():
+    #     #     print("Error:")
+    #     #     print(self.get_error(timeout=5))
+    #     # return order_status
 
     def getId(self):
         print("requesting id")
@@ -371,8 +371,9 @@ if __name__ == '__main__':
             print("Stop is=", stop)
             orders=createConditionalOrder(contract, "SELL", quantity, target, stop, bar.low)
             for order in orders:
-                status=app.fireOrder(contract, order)
-                print(status)
+                # status=app.fireOrder(contract, order)
+                # print(status)
+                app.placeOrder(order.orderId, contract, order)
 
     except Exception as err:
         print("Shit happens ", type(err).__name__)

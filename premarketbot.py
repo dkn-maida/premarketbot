@@ -18,19 +18,6 @@ import math
 import argparse
 
 
-class OrderStatus:
-
-    def __init__(self, orderId, status, filled, remaining, parentId, whyHeld):
-        self.orderId=orderId
-        self.status=status
-        self.filled=filled
-        self.remaining=remaining
-        self.parentId=parentId
-        self.whyHeld=whyHeld
-
-    def __str__(self):
-        return "Order id= " + str(self.orderId) + " Order status= " + self.status 
-
 class Wrapper(EWrapper): 
 
     # error handling methods
@@ -160,6 +147,20 @@ class Bot(Wrapper, Client):
 
         #Starts listening for errors 
         self.init_error()
+
+class OrdersList:
+
+    def __init__(self):
+        self.LongOrdersMap={}
+        self.ShortOrdersMap={}
+
+    def add_order(self, order: Order, symbol: str):
+        id(order.action == "BUY"):
+            self.LongOrdersMap[symbol]=order
+        else:
+            self.ShortOrdersMap.[symbol]=order
+    
+    
 
 def createContract(symbol: str) -> Contract:
     contract = Contract()
@@ -311,11 +312,7 @@ if __name__ == '__main__':
 
 
     ####TODO#####
-    # le programme fonctionne avec un seul client
-    # Pour en ajouter un il faut gerer le reqId avec concurrence, cad recupérer le reqId valide et en balancer un plus eleve
-    # En gérant du lock et tout ( un Thread par strategie ?)
-    # doit etre capable de recover en cas de crash
-    # Exception handling
-    # logging
-    # clarity
-    # Gerer les cancels
+    #gerer le risque max
+    #gerer auto-cancel
+    #gerer le scheduling
+    

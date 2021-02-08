@@ -148,17 +148,17 @@ class Bot(Wrapper, Client):
         #Starts listening for errors 
         self.init_error()
 
-class OrdersList:
+# class OrdersList:
 
-    def __init__(self):
-        self.LongOrdersMap={}
-        self.ShortOrdersMap={}
+#     def __init__(self):
+#         self.LongOrdersMap={}
+#         self.ShortOrdersMap={}
 
-    def add_order(self, order: Order, symbol: str):
-        id(order.action == "BUY"):
-            self.LongOrdersMap[symbol]=order
-        else:
-            self.ShortOrdersMap.[symbol]=order
+#     def add_order(self, order: Order, symbol: str):
+#         id(order.action == "BUY"):
+#             self.LongOrdersMap[symbol]=order
+#         else:
+#             self.ShortOrdersMap.[symbol]=order
     
     
 
@@ -237,7 +237,7 @@ if __name__ == '__main__':
         app.request_id=0
 
         now = datetime.datetime.now()
-        openTime=datetime.datetime(year=now.year, month=now.month, day=now.day, hour=10, minute=00)
+        openTime=datetime.datetime(year=now.year, month=now.month, day=now.day, hour=15, minute=40)
         openTime=datetime.datetime.timestamp(openTime)
         #assigning the return from our clock method to a variable
         print("requesting server time...")

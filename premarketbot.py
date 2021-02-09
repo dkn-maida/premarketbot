@@ -155,11 +155,16 @@ class Bot(Wrapper, Client):
 #         self.ShortOrdersMap={}
 
 #     def add_order(self, order: Order, symbol: str):
-#         id(order.action == "BUY"):
-#             self.LongOrdersMap[symbol]=order
+#         if(order.action == "BUY"):
+#             self.LongOrdersMap[symbol]=order.orderId
 #         else:
-#             self.ShortOrdersMap.[symbol]=order
-    
+#             self.ShortOrdersMap[symbol]=order.orderId
+
+#     def getOrderId(self, symbol: str, direction: str):
+#         if(direction == "BUY"):
+#             return self.LongOrdersMap[symbol]
+#         else:
+#             return self.ShortOrdersMap[symbol]
     
 
 def createContract(symbol: str) -> Contract:
@@ -187,6 +192,8 @@ def createConditionalOrder(contract, action, quantity, target, stop, start) -> O
     orderMain.transmit = False
     orderMain.totalQuantity = quantity
     orderMain.conditions.append(priceCondition)
+    orderMain.ocaGroup=contract.symbol
+    orderMain.ocaType=1
 
     takeProfit = Order()
     takeProfit.orderId = app.request_id
@@ -228,7 +235,8 @@ if __name__ == '__main__':
         print(contract.symbol)
     try:
         print("before start")
-        app = Bot(args.host, args.port, 0)     
+        app = Bot(args.host, args.port, 0)
+        ordersList=OrdersList()     
         print("The program has begun")
         print("Cancelling all orders...")
         app.reqGlobalCancel()
@@ -276,7 +284,6 @@ if __name__ == '__main__':
             print("RangeUp=", rangeUp)
             print("RangeDown=", rangeDown)
 
-        
             #order infos
             move=round(max(body, rangeUp),2)
             quantity= MAX_RISK // move
@@ -309,10 +316,10 @@ if __name__ == '__main__':
     finally:
         app.disconnect()
     
-
-
     ####TODO#####
-    #gerer le risque max
     #gerer auto-cancel
-    #gerer le scheduling
-    
+    #mettre en place des logs
+    #decoupler le code
+    #scheduler le bot
+    #mettre en place le crashing ( conditional order ou modifier le stop, ou nouveau stop et cancel l'ancien stop )
+    #je peux reussir en conditionnal order avec un oca group sur le stop

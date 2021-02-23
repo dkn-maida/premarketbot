@@ -41,15 +41,6 @@ class Wrapper(EWrapper):
         ## Overrides the native method
         errormessage = "IB returns an error with %d errorcode %d that says %s" % (id, errorCode, errorString)
         self.my_errors_queue.put(errormessage)
-    
-    def init_time(self):
-        time_queue = queue.Queue()
-        self.my_time_queue = time_queue
-        return time_queue
-
-    def currentTime(self, server_time):
-        ## Overriden method
-        self.my_time_queue.put(server_time)
 
     #contract handling methods
     def init_contract(self):
@@ -79,21 +70,6 @@ class Client(EClient):
     def __init__(self, wrapper):
         EClient.__init__(self, wrapper)
         self.request_id = 0
-
-    def server_clock(self):
-        print("Asking server for Unix time")
-        time_storage = self.wrapper.init_time()
-        self.reqCurrentTime()
-        max_wait_time = 5
-        try:
-            requested_time = time_storage.get(timeout = max_wait_time)
-        except queue.Empty:
-            print("The queue was empty or max time reached")
-            requested_time = None
-        while self.wrapper.is_error():
-            print("Error:")
-            print(self.get_error(timeout=5))
-        return requested_time
 
     def getContractDetails(self, contract):
         print("Asking for contracts details")
@@ -148,24 +124,6 @@ class Bot(Wrapper, Client):
         #Starts listening for errors 
         self.init_error()
 
-# class OrdersList:
-
-#     def __init__(self):
-#         self.LongOrdersMap={}
-#         self.ShortOrdersMap={}
-
-#     def add_order(self, order: Order, symbol: str):
-#         if(order.action == "BUY"):
-#             self.LongOrdersMap[symbol]=order.orderId
-#         else:
-#             self.ShortOrdersMap[symbol]=order.orderId
-
-#     def getOrderId(self, symbol: str, direction: str):
-#         if(direction == "BUY"):
-#             return self.LongOrdersMap[symbol]
-#         else:
-#             return self.ShortOrdersMap[symbol]
-    
 
 def createContract(symbol: str) -> Contract:
     contract = Contract()
@@ -244,17 +202,15 @@ if __name__ == '__main__':
         app.request_id=0
 
         now = datetime.datetime.now()
-        openTime=datetime.datetime(year=now.year, month=now.month, day=now.day, hour=15, minute=40)
-        openTime=datetime.datetime.timestamp(openTime)
+        openTime=datetime.datetime(year=now.year, month=now.month, day=now.day, hour=10, minute=54)
         #assigning the return from our clock method to a variable
         print("requesting server time...")
-        requested_time = app.server_clock()
-        print(requested_time)
+        requested_time = datetime.datetime.now()
         print("server time requested, waiting for market open...")
         while(requested_time < openTime):
             print("not yet")
             time.sleep(2)
-            requested_time = app.server_clock()
+            requested_time = datetime.datetime.now()
         #printing the return from the server
         print("STARTED--> Now firing orders..." )
         #recuperer la valeur de la barre en 5 min
@@ -316,9 +272,7 @@ if __name__ == '__main__':
         app.disconnect()
     
     ####TODO#####
-    #gerer auto-cancel
     #mettre en place des logs
     #decoupler le code
     #scheduler le bot
     #mettre en place le crashing ( conditional order ou modifier le stop, ou nouveau stop et cancel l'ancien stop )
-    #je peux reussir en conditionnal order avec un oca group sur le stop

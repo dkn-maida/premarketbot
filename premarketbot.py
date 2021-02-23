@@ -188,7 +188,7 @@ def createConditionalOrder(contract, action, quantity, target, stop, start) -> O
     orderMain.orderId=app.request_id
     app.request_id += 1
     orderMain.action = action  
-    orderMain.orderType = "MKT"    
+    orderMain.orderType = "MTL"    
     orderMain.transmit = False
     orderMain.totalQuantity = quantity
     orderMain.conditions.append(priceCondition)

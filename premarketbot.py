@@ -235,8 +235,7 @@ if __name__ == '__main__':
         print(contract.symbol)
     try:
         print("before start")
-        app = Bot(args.host, args.port, 0)
-        ordersList=OrdersList()     
+        app = Bot(args.host, args.port, 0)  
         print("The program has begun")
         print("Cancelling all orders...")
         app.reqGlobalCancel()
